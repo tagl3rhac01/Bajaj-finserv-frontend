@@ -1,113 +1,235 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+interface Response {
+  is_success: boolean;
+  user_id: string;
+  email: string;
+  roll_number: string;
+  numbers: Array<number>;
+  alphabets: Array<string>;
+  highestAlphabet: string;
+}
+
+const filters = ["Numbers", "Alphabets", "Highest Alphabet"];
 
 export default function Home() {
+  const [data, setData] = useState("");
+
+  const [response, setResponse] = useState<Response | null>(null);
+  const fetchData = async () => {
+    if (data == "") {
+      return;
+    }
+    const json = JSON.parse(data);
+    const res = await fetch("/bfhl", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(json),
+    });
+    const jsonResponse = await res.json();
+    setResponse(jsonResponse);
+  };
+
+  const [filterSelected, setFilterSelected] = useState<Array<string>>([]);
+
+  const handleSelection = (value: string) => {
+    if (filterSelected.includes(value)) {
+      return;
+    } else {
+      setFilterSelected([...filterSelected, value]);
+    }
+  };
+
+  const handleRemove = (value: string) => {
+    if (filterSelected.includes(value)) {
+      const newArr = filterSelected.filter(
+        (e) => e.toLowerCase() !== value.toLowerCase()
+      );
+      setFilterSelected([...newArr]);
+    }
+    return;
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <>
+      <div className="w-screen h-screen">
+        <div className="w-full flex flex-col gap-4 p-24">
+          <div>
+            <label htmlFor="data" className="text-sm text-gray-500">
+              Data
+            </label>
+            <input
+              type="text"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="w-full h-12 border border-slate-300 bg-gray-50 outline-none p-2"
+              id="data"
             />
-          </a>
+          </div>
+          <div>
+            <button
+              onClick={() => {
+                fetchData();
+              }}
+              className="w-full h-12 text-white bg-indigo-500 uppercase"
+            >
+              submit
+            </button>
+          </div>
+          <div>
+            {response != null ? (
+              <>
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <FilterSelector
+                      selected={handleSelection}
+                      filter={filterSelected}
+                      remove={handleRemove}
+                    />
+                  </div>
+
+                  <div className="w-full p-4 bg-gray-50 flex flex-col">
+                    <div className="text-md font-medium">Response</div>
+                    <div>
+                      {filterSelected.includes(filters[0]) ? (
+                        <>
+                          <div className="flex flex-row">
+                            Numbers :{" "}
+                            <div className="flex flex-row gap-2">
+                              {response.numbers.map((e, index) => {
+                                return <div key={index}>{e} </div>;
+                              })}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <></>
+                      )}
+                      {filterSelected.includes(filters[1]) ? (
+                        <>
+                          <div className="flex flex-row">
+                            Alphabets :{" "}
+                            <div className="flex flex-row gap-2">
+                              {response.alphabets.map((e, index) => {
+                                return <div key={index}>{e} </div>;
+                              })}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <></>
+                      )}
+                      {filterSelected.includes(filters[2]) ? (
+                        <>
+                          <div className="flex flex-row">
+                            Highest Alphabet : {response.highestAlphabet}
+                          </div>
+                        </>
+                      ) : (
+                        <></>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </>
   );
 }
+
+const FilterSelector = ({
+  selected,
+  filter,
+  remove,
+}: {
+  selected: (value: string) => void;
+  filter: Array<string>;
+  remove: (value: string) => void;
+}) => {
+  const [clicked, setClicked] = useState(false);
+
+  return (
+    <>
+      <div className="cursor-pointer w-full h-12 bg-gray-50 items-center px-2 border border-slate-300 flex flex-row gap-4">
+        {filter.map((e, index) => {
+          return (
+            <div
+              key={index}
+              className="text-gray-500 text-sm h-min bg-gray-100 p-2 rounded-sm flex items-center gap-2"
+            >
+              {e}
+              <span
+                onClick={() => {
+                  remove(e);
+                }}
+                className="scale-50"
+              >
+                {close}
+              </span>
+            </div>
+          );
+        })}
+        <div className="flex-1"></div>
+        <span
+          onClick={() => {
+            setClicked(!clicked);
+          }}
+        >
+          {dropDown}
+        </span>
+      </div>
+      {clicked ? (
+        <>
+          <div className="w-full bg-gray-50">
+            {filters.map((e, index) => {
+              return (
+                <div
+                  onClick={() => {
+                    selected(e);
+                  }}
+                  className="w-full h-12 flex items-center px-2 cursor-pointer"
+                  key={index}
+                >
+                  {e}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <></>
+      )}
+    </>
+  );
+};
+
+const close = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    height="24px"
+    viewBox="0 -960 960 960"
+    width="24px"
+  >
+    <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+  </svg>
+);
+
+const dropDown = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    height="24px"
+    viewBox="0 -960 960 960"
+    width="24px"
+  >
+    <path d="M480-360 280-560h400L480-360Z" />
+  </svg>
+);
